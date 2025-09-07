@@ -1,7 +1,8 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
 import { Poppins } from 'next/font/google'
+import AppBody from '@/components/AppBody';
 
 export const metadata: Metadata = {
   title: 'DineFlow',
@@ -21,10 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={poppins.variable}>
-      <body className="font-body antialiased">
-        {children}
-        <Toaster />
-      </body>
+        <body className="font-body antialiased">
+            <AppBody>{children}</AppBody>
+        </body>
     </html>
   );
 }
