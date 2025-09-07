@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
 
 import type { MenuItem, MenuCategory } from '@/lib/types';
-import { menuItems } from '@/data/menu';
+import { useApi } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,15 +18,45 @@ import { Card, CardContent } from '@/components/ui/card';
 const CATEGORIES: MenuCategory[] = ['Starters', 'Mains', 'Drinks'];
 
 export default function MenuManagementPage() {
-  const [currentMenuItems, setCurrentMenuItems] = useState<MenuItem[]>(menuItems);
+  // Fetch menu items from API
+  const { data: menuItems, loading, error, refetch } = useApi<MenuItem[]>('/api/menu');
 
-  const groupedMenuItems = currentMenuItems.reduce((acc, item) => {
+  const groupedMenuItems = menuItems ? menuItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }
     acc[item.category].push(item);
     return acc;
-  }, {} as Record<MenuCategory, MenuItem[]>);
+  }, {} as Record<MenuCategory, MenuItem[]>) : {};
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Failed to load menu items</p>
+          <button 
+            onClick={refetch}
+            className="text-primary hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-6">

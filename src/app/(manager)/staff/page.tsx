@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
-import { staffMembers } from '@/data/staff';
 import type { StaffMember } from '@/lib/types';
+import { useApi } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,11 +15,41 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function StaffManagementPage() {
-  const [team, setTeam] = useState<StaffMember[]>(staffMembers);
+  // Fetch staff from API
+  const { data: staff, loading, error, refetch } = useApi<StaffMember[]>('/api/staff');
 
   const getStatusColor = (status: 'On Shift' | 'Off Duty') => {
     return status === 'On Shift' ? 'bg-green-500' : 'bg-gray-400';
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading staff...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Failed to load staff members</p>
+          <button 
+            onClick={refetch}
+            className="text-primary hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-6">
@@ -39,7 +69,7 @@ export default function StaffManagementPage() {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {team.map((member) => (
+        {staff?.map((member) => (
           <Card key={member.id} className="rounded-2xl shadow-sm border text-center">
             <CardContent className="p-6 flex flex-col items-center">
                <div className="relative">

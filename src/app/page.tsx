@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Table, TableStatus } from '@/lib/types';
 import TableGrid from '@/components/TableGrid';
 import OrderPopup from '@/components/OrderPopup';
 import NotificationBell from '@/components/NotificationBell';
-import { tables } from '@/data/tables';
+import { useApi } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { ListFilter, UserCircle } from 'lucide-react';
 import {
@@ -24,6 +24,24 @@ export default function WaiterPage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [activeFilter, setActiveFilter] = useState<TableStatus | 'All'>('All');
+  
+  // Fetch tables from API
+  const { data: tables, loading, error, refetch } = useApi<Table[]>('/api/tables');
+  
+  // Sync table statuses when component mounts
+  useEffect(() => {
+    const syncTableStatuses = async () => {
+      try {
+        await fetch('/api/tables/sync-status', { method: 'POST' });
+        // Refetch tables after syncing
+        refetch();
+      } catch (error) {
+        console.error('Error syncing table statuses:', error);
+      }
+    };
+    
+    syncTableStatuses();
+  }, []);
 
   const handleTableSelect = (table: Table) => {
     if (table.status !== 'Billing') {
@@ -32,16 +50,54 @@ export default function WaiterPage() {
     }
   };
 
-  const handleClosePopup = () => {
+  const handleClosePopup = async () => {
     setIsPopupOpen(false);
     setTimeout(() => {
       setSelectedTable(null);
     }, 300);
+    
+    // Sync table statuses and refetch tables to get updated statuses after order
+    try {
+      await fetch('/api/tables/sync-status', { method: 'POST' });
+      refetch();
+    } catch (error) {
+      console.error('Error syncing table statuses:', error);
+      refetch(); // Still refetch even if sync fails
+    }
   };
 
-  const filteredTables = activeFilter === 'All'
+  const filteredTables = tables && activeFilter === 'All'
     ? tables
-    : tables.filter((table) => table.status === activeFilter);
+    : tables?.filter((table) => table.status === activeFilter) || [];
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading tables...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Failed to load tables</p>
+          <button 
+            onClick={refetch}
+            className="text-primary hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
