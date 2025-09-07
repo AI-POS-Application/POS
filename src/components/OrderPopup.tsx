@@ -192,6 +192,8 @@ export default function OrderPopup({ isOpen, onOpenChange, table, onClose }: Ord
       // Sync table statuses to ensure table overview shows correct status
       try {
         await fetch('/api/tables/sync-status', { method: 'POST' });
+        // Trigger a custom event to notify parent component to refetch tables
+        window.dispatchEvent(new CustomEvent('orderCreated'));
       } catch (error) {
         console.error('Error syncing table statuses:', error);
       }

@@ -23,7 +23,7 @@ import {
 const navItems = [
   { href: '/', label: 'Waiter', icon: Utensils },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
-  { href: '/orders', label: 'Orders', icon: ClipboardList, comingSoon: true },
+  { href: '/orders', label: 'Orders', icon: ClipboardList },
   { href: '/menu', label: 'Menu', icon: ChefHat },
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/inventory', label: 'Inventory', comingSoon: true, icon: Archive },

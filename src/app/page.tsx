@@ -43,6 +43,19 @@ export default function WaiterPage() {
     syncTableStatuses();
   }, []);
 
+  // Listen for order creation events to refetch tables
+  useEffect(() => {
+    const handleOrderCreated = () => {
+      refetch();
+    };
+
+    window.addEventListener('orderCreated', handleOrderCreated);
+    
+    return () => {
+      window.removeEventListener('orderCreated', handleOrderCreated);
+    };
+  }, [refetch]);
+
   const handleTableSelect = (table: Table) => {
     if (table.status !== 'Billing') {
       setSelectedTable(table);
