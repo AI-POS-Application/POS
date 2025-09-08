@@ -1,27 +1,28 @@
 'use client';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
-const data = [
-  { name: '9am', sales: Math.floor(Math.random() * 200) + 50 },
-  { name: '10am', sales: Math.floor(Math.random() * 200) + 50 },
-  { name: '11am', sales: Math.floor(Math.random() * 200) + 50 },
-  { name: '12pm', sales: Math.floor(Math.random() * 400) + 100 },
-  { name: '1pm', sales: Math.floor(Math.random() * 400) + 100 },
-  { name: '2pm', sales: Math.floor(Math.random() * 400) + 100 },
-  { name: '3pm', sales: Math.floor(Math.random() * 200) + 50 },
-  { name: '4pm', sales: Math.floor(Math.random() * 200) + 50 },
-  { name: '5pm', sales: Math.floor(Math.random() * 300) + 50 },
-  { name: '6pm', sales: Math.floor(Math.random() * 500) + 100 },
-  { name: '7pm', sales: Math.floor(Math.random() * 500) + 100 },
-  { name: '8pm', sales: Math.floor(Math.random() * 500) + 100 },
-];
+interface SalesChartProps {
+  data?: Array<{
+    date: string;
+    sales: number;
+  }>;
+}
 
-export default function SalesChart() {
+export default function SalesChart({ data = [] }: SalesChartProps) {
+  // If no data provided, show empty state
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+        <p>No sales data available</p>
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>
         <XAxis
-          dataKey="name"
+          dataKey="date"
           stroke="#888888"
           fontSize={12}
           tickLine={false}
@@ -35,11 +36,33 @@ export default function SalesChart() {
           tickFormatter={(value) => `$${value}`}
         />
         <Tooltip
-            contentStyle={{
-                backgroundColor: 'hsl(var(--background))',
-                borderColor: 'hsl(var(--border))',
-                borderRadius: 'var(--radius)',
-            }}
+          content={({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+              return (
+                <div className="rounded-lg border bg-background p-2 shadow-md">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-[0.70rem] uppercase text-muted-foreground">
+                        Date
+                      </span>
+                      <span className="font-bold text-muted-foreground">
+                        {label}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[0.70rem] uppercase text-muted-foreground">
+                        Sales
+                      </span>
+                      <span className="font-bold">
+                        ${payload[0].value?.toFixed(2) || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          }}
         />
         <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
       </BarChart>
