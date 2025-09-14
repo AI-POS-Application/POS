@@ -11,6 +11,7 @@ import {
   Settings,
   Utensils,
   ChefHat,
+  ShoppingCart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -23,6 +24,7 @@ import {
 const navItems = [
   { href: '/', label: 'Waiter', icon: Utensils },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
+  { href: '/order-taking', label: 'Order Taking', icon: ShoppingCart, highlight: true },
   { href: '/orders', label: 'Orders', icon: ClipboardList },
   { href: '/kitchen', label: 'Kitchen', icon: ChefHat },
   { href: '/menu', label: 'Menu', icon: Archive },
@@ -54,11 +56,12 @@ export default function AppSidebar() {
                   <Link
                     href={item.comingSoon ? '#' : item.href}
                     className={cn(
-                      'flex flex-col items-center w-16 h-16 justify-center rounded-lg transition-colors',
+                      'flex flex-col items-center w-16 h-16 justify-center rounded-lg transition-colors relative',
                       isActive
                         ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                      item.comingSoon && 'cursor-not-allowed opacity-60'
+                      item.comingSoon && 'cursor-not-allowed opacity-60',
+                      item.highlight && 'bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30'
                     )}
                   >
                     <item.icon className="h-6 w-6 flex-shrink-0" />

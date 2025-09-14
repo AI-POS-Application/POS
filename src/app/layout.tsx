@@ -3,6 +3,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Poppins } from 'next/font/google'
 import AppBody from '@/components/AppBody';
+import FloatingOrderButton from '@/components/FloatingOrderButton';
 
 export const metadata: Metadata = {
   title: 'DineFlow',
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en" className={poppins.variable}>
         <body className="font-body antialiased">
             <AppBody>{children}</AppBody>
+            <FloatingOrderButton />
         </body>
     </html>
   );
