@@ -117,7 +117,7 @@ export async function GET() {
     const dashboardData = {
       kpis: {
         todaysSales: {
-          value: `$${salesData.totalSales.toFixed(2)}`,
+          value: `₹${salesData.totalSales.toFixed(0)}`,
           change: `${salesChange >= 0 ? '+' : ''}${salesChange.toFixed(0)}%`,
           isPositive: salesChange >= 0
         },

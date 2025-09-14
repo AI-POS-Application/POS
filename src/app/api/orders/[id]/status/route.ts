@@ -31,7 +31,7 @@ export async function PATCH(
     // Update order status
     const updateOrder = db.prepare(`
       UPDATE orders 
-      SET status = ?, updatedAt = CURRENT_TIMESTAMP 
+      SET status = ?, updated_at = CURRENT_TIMESTAMP 
       WHERE id = ?
     `);
     
@@ -46,22 +46,22 @@ export async function PATCH(
 
     // If order is marked as paid, update table status to free
     if (status === 'Paid') {
-      const getTableId = db.prepare('SELECT tableId FROM orders WHERE id = ?');
-      const order = getTableId.get(orderId) as { tableId: number };
+      const getTableId = db.prepare('SELECT table_id FROM orders WHERE id = ?');
+      const order = getTableId.get(orderId) as { table_id: number };
       
       if (order) {
         // Check if there are any other active orders for this table
         const activeOrdersQuery = db.prepare(`
           SELECT COUNT(*) as count 
           FROM orders 
-          WHERE tableId = ? AND status IN ('Pending', 'Preparing', 'Ready', 'Served')
+          WHERE table_id = ? AND status IN ('Pending', 'Preparing', 'Ready', 'Served')
         `);
-        const activeOrders = activeOrdersQuery.get(order.tableId) as { count: number };
+        const activeOrders = activeOrdersQuery.get(order.table_id) as { count: number };
         
         if (activeOrders.count === 0) {
           // No more active orders, set table to free
           const updateTable = db.prepare('UPDATE tables SET status = ? WHERE id = ?');
-          updateTable.run('Free', order.tableId);
+          updateTable.run('Free', order.table_id);
         }
       }
     }

@@ -86,10 +86,10 @@ export default function WaiterPage() {
   // Show loading state
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+      <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-muted-foreground">Loading tables...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-xs text-muted-foreground">Loading tables...</p>
         </div>
       </div>
     );
@@ -98,12 +98,12 @@ export default function WaiterPage() {
   // Show error state
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+      <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
         <div className="text-center">
-          <p className="text-destructive mb-2">Failed to load tables</p>
+          <p className="text-destructive mb-2 text-sm">Failed to load tables</p>
           <button 
             onClick={refetch}
-            className="text-primary hover:underline"
+            className="text-primary hover:underline text-xs"
           >
             Try again
           </button>
@@ -114,53 +114,54 @@ export default function WaiterPage() {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 no-scrollbar">
-          <div className="flex items-center justify-end mb-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 no-scrollbar">
+          <header className="flex flex-col gap-3">
+            <div className="flex h-12 items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold text-foreground font-headline">
+                  Tables Overview
+                </h1>
+                <p className="text-xs text-muted-foreground">Select a table to start an order.</p>
+              </div>
               <div className="flex items-center gap-2 sm:gap-4">
-                  <NotificationBell />
-                  <DropdownMenu>
+                <NotificationBell />
+                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
                       <UserCircle className="h-5 w-5" />
-                      </Button>
+                    </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Profile</DropdownMenuItem>
-                      <DropdownMenuItem>Settings</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Logout</DropdownMenuItem>
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem>Settings</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Logout</DropdownMenuItem>
                   </DropdownMenuContent>
-                  </DropdownMenu>
+                </DropdownMenu>
               </div>
-          </div>
-
-          <header className="flex h-16 items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground font-headline">
-                Tables Overview
-              </h1>
-              <p className="text-sm text-muted-foreground">Select a table to start an order.</p>
             </div>
-            <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-9">
-                <ListFilter className="mr-2 h-4 w-4" />
-                <span className="text-sm">{activeFilter}</span>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => setActiveFilter('All')}>All</DropdownMenuItem>
-                {ALL_STATUSES.map(status => (
-                <DropdownMenuItem key={status} onSelect={() => setActiveFilter(status)}>
-                    {status}
-                </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-9">
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    <span className="text-sm">{activeFilter}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setActiveFilter('All')}>All</DropdownMenuItem>
+                  {ALL_STATUSES.map(status => (
+                    <DropdownMenuItem key={status} onSelect={() => setActiveFilter(status)}>
+                      {status}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </header>
 
           <TableGrid tables={filteredTables} onTableSelect={handleTableSelect} />

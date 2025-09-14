@@ -70,10 +70,14 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const validCategories: MenuCategory[] = ['Starters', 'Mains', 'Drinks'];
+    const validCategories: MenuCategory[] = [
+      'Indian Breakfast', 'Western Breakfast', 'North Indian Main Course', 
+      'Biryani', 'Rice', 'Indian Breads', 'Pasta', 'Western Full Plate', 
+      'Cold Beverages', 'Tea & Coffee'
+    ];
     if (!validCategories.includes(category)) {
       return NextResponse.json(
-        { error: 'Invalid category. Must be Starters, Mains, or Drinks' }, 
+        { error: 'Invalid category. Must be one of the valid menu categories' }, 
         { status: 400 }
       );
     }

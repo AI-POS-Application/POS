@@ -17,22 +17,22 @@ const statusConfig: { [key in TableStatus]: {
   cardClass: string;
 }} = {
   Free: {
-    icon: <Utensils className="h-5 w-5 text-green-500" />,
+    icon: <Utensils className="h-4 w-4 text-green-500" />,
     badgeVariant: 'secondary',
     cardClass: 'bg-green-500/5 hover:border-green-500/50',
   },
   Occupied: {
-    icon: <Users className="h-5 w-5 text-orange-500" />,
+    icon: <Users className="h-4 w-4 text-orange-500" />,
     badgeVariant: 'outline',
     cardClass: 'bg-orange-500/5 hover:border-orange-500/50',
   },
   Serving: {
-    icon: <BellRing className="h-5 w-5 text-blue-500" />,
+    icon: <BellRing className="h-4 w-4 text-blue-500" />,
     badgeVariant: 'default',
     cardClass: 'bg-blue-500/5 hover:border-blue-500/50',
   },
   Billing: {
-    icon: <Receipt className="h-5 w-5 text-red-500" />,
+    icon: <Receipt className="h-4 w-4 text-red-500" />,
     badgeVariant: 'destructive',
     cardClass: 'bg-red-500/5 border-red-500/20 cursor-not-allowed opacity-80',
   },
@@ -57,15 +57,15 @@ export default function TableCard({ table, onClick }: TableCardProps) {
         table.status === 'Billing' && 'cursor-not-allowed hover:transform-none'
       )}
     >
-      <CardContent className="p-3 flex flex-col items-start justify-between h-full">
+      <CardContent className="p-2 flex flex-col items-start justify-between h-full">
         <div className='flex justify-between w-full items-start'>
             <div className='flex flex-col'>
                 <p className="text-xs text-muted-foreground">Table</p>
-                <p className="text-2xl font-bold font-headline">{table.number}</p>
+                <p className="text-lg font-bold font-headline">{table.number}</p>
             </div>
             {config.icon}
         </div>
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div className="flex flex-wrap gap-1 mt-2">
           <Badge variant={config.badgeVariant} className={cn("text-xs font-medium", badgeColors[table.status])}>
             {table.status}
           </Badge>

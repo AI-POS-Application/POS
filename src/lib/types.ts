@@ -9,7 +9,17 @@ export interface Table {
   updatedAt?: string;
 }
 
-export type MenuCategory = 'Starters' | 'Mains' | 'Drinks';
+export type MenuCategory = 
+  | 'Indian Breakfast' 
+  | 'Western Breakfast' 
+  | 'North Indian Main Course' 
+  | 'Biryani' 
+  | 'Rice' 
+  | 'Indian Breads' 
+  | 'Pasta' 
+  | 'Western Full Plate' 
+  | 'Cold Beverages' 
+  | 'Tea & Coffee';
 
 export interface MenuItem {
   id: number;
@@ -47,6 +57,7 @@ export type OrderStatus = 'Pending' | 'Preparing' | 'Ready' | 'Served' | 'Paid';
 export interface Order {
   id: number;
   tableId: number;
+  tableNumber: number;
   totalAmount: number;
   status: OrderStatus;
   staffId?: number;

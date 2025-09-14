@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Plus, Minus, Search, ShoppingCart, ChevronDown, ChevronRight, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { useToast } from "@/hooks/use-toast"
-import { cn } from '@/lib/utils';
+import { cn, formatPrice, formatPriceWithDecimals } from '@/lib/utils';
 
 interface OrderPopupProps {
   isOpen: boolean;
@@ -210,11 +210,11 @@ export default function OrderPopup({ isOpen, onOpenChange, table, onClose }: Ord
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogOverlay className="backdrop-blur-sm" />
-        <DialogContent className="max-w-screen-lg w-[95vw] h-[90vh] flex flex-col p-0 gap-0 shadow-2xl rounded-2xl border-0 data-[state=open]:zoom-in-90">
-            <DialogHeader className="p-4 sm:p-6 pb-3 flex flex-row items-center justify-between flex-shrink-0">
+        <DialogContent className="max-w-screen-lg w-[95vw] h-[85vh] flex flex-col p-0 gap-0 shadow-2xl rounded-xl border-0 data-[state=open]:zoom-in-90">
+            <DialogHeader className="p-3 sm:p-4 pb-2 flex flex-row items-center justify-between flex-shrink-0">
             <div>
-                <DialogTitle className="text-xl font-bold font-headline">Order for Table {table.number}</DialogTitle>
-                <DialogDescription className="text-sm">
+                <DialogTitle className="text-lg font-bold font-headline">Order for Table {table.number}</DialogTitle>
+                <DialogDescription className="text-xs">
                   {isLoadingExisting ? (
                     "Loading existing orders..."
                   ) : (
@@ -223,56 +223,56 @@ export default function OrderPopup({ isOpen, onOpenChange, table, onClose }: Ord
                 </DialogDescription>
             </div>
             </DialogHeader>
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden p-4 sm:p-6 pt-0">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 overflow-hidden p-3 sm:p-4 pt-0">
             {/* Left Column - Menu and Existing Orders */}
             <div className="md:col-span-2 flex flex-col gap-3 h-full">
               {/* Existing Orders Section */}
               {existingOrders.length > 0 && (
-                <div className="bg-background rounded-xl p-3 sm:p-4 border">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold flex items-center">
-                      <Clock className="mr-2 h-5 w-5 text-primary"/>
+                <div className="bg-background rounded-lg p-2 sm:p-3 border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold flex items-center">
+                      <Clock className="mr-1 h-4 w-4 text-primary"/>
                       Existing Orders ({existingOrders.length})
                     </h3>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowExistingOrders(!showExistingOrders)}
-                      className="text-xs"
+                      className="text-xs h-7"
                     >
                       {showExistingOrders ? 'Hide' : 'Show'} Orders
                     </Button>
                   </div>
                   
                   {showExistingOrders && (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
                       {existingOrders.map((order) => {
                         const statusInfo = getOrderStatusInfo(order.status);
                         const StatusIcon = statusInfo.icon;
                         const isExpanded = expandedOrders.has(order.id);
                         
                         return (
-                          <div key={order.id} className="border rounded-lg p-3 bg-card">
+                          <div key={order.id} className="border rounded-lg p-2 bg-card">
                             <div 
                               className="flex items-center justify-between cursor-pointer"
                               onClick={() => toggleOrderExpansion(order.id)}
                             >
-                              <div className="flex items-center space-x-3">
+                              <div className="flex items-center space-x-2">
                                 {isExpanded ? (
-                                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
                                 ) : (
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
                                 )}
-                                <div className="flex items-center space-x-2">
-                                  <StatusIcon className={`h-4 w-4 ${statusInfo.color}`} />
-                                  <span className="font-medium">Order #{order.id}</span>
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}>
+                                <div className="flex items-center space-x-1">
+                                  <StatusIcon className={`h-3 w-3 ${statusInfo.color}`} />
+                                  <span className="font-medium text-xs">Order #{order.id}</span>
+                                  <span className={`px-1 py-0.5 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}>
                                     {order.status}
                                   </span>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="font-semibold">${order.totalAmount.toFixed(2)}</div>
+                                <div className="font-semibold text-xs">{formatPriceWithDecimals(order.totalAmount)}</div>
                                 <div className="text-xs text-muted-foreground">
                                   {new Date(order.createdAt).toLocaleTimeString()}
                                 </div>
@@ -280,23 +280,23 @@ export default function OrderPopup({ isOpen, onOpenChange, table, onClose }: Ord
                             </div>
                             
                             {isExpanded && order.items && (
-                              <div className="mt-3 pt-3 border-t">
-                                <div className="space-y-2">
+                              <div className="mt-2 pt-2 border-t">
+                                <div className="space-y-1">
                                   {order.items.map((item: any) => (
-                                    <div key={`${order.id}-${item.id}`} className="flex items-center justify-between text-sm">
-                                      <div className="flex items-center space-x-2">
+                                    <div key={`${order.id}-${item.id}`} className="flex items-center justify-between text-xs">
+                                      <div className="flex items-center space-x-1">
                                         <Image 
                                           src={item.image} 
                                           alt={item.itemName} 
-                                          width={32} 
-                                          height={32} 
+                                          width={24} 
+                                          height={24} 
                                           className="rounded-md aspect-square object-cover"
                                         />
                                         <span className="font-medium">{item.itemName}</span>
                                       </div>
-                                      <div className="flex items-center space-x-2">
+                                      <div className="flex items-center space-x-1">
                                         <span className="text-muted-foreground">Qty: {item.quantity}</span>
-                                        <span className="font-medium">${item.subtotal.toFixed(2)}</span>
+                                        <span className="font-medium">{formatPriceWithDecimals(item.subtotal)}</span>
                                       </div>
                                     </div>
                                   ))}
@@ -312,53 +312,53 @@ export default function OrderPopup({ isOpen, onOpenChange, table, onClose }: Ord
               )}
 
               {/* Menu List */}
-              <div className="flex-1 flex flex-col gap-3 bg-background rounded-xl p-3 sm:p-4">
+              <div className="flex-1 flex flex-col gap-2 bg-background rounded-lg p-2 sm:p-3">
                 <div className="relative flex-shrink-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                     placeholder="Search menu items..."
-                    className="pl-9 h-10 text-sm rounded-lg bg-card"
+                    className="pl-9 h-8 text-xs rounded-lg bg-card"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 </div>
                 <Tabs defaultValue="Starters" className="flex flex-col flex-1 overflow-hidden">
-                <TabsList className="grid w-full grid-cols-3 bg-card rounded-lg h-10">
-                    <TabsTrigger value="Starters" className="text-sm rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Starters</TabsTrigger>
-                    <TabsTrigger value="Mains" className="text-sm rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Mains</TabsTrigger>
-                    <TabsTrigger value="Drinks" className="text-sm rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Drinks</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 bg-card rounded-lg h-8">
+                    <TabsTrigger value="Starters" className="text-xs rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Starters</TabsTrigger>
+                    <TabsTrigger value="Mains" className="text-xs rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Mains</TabsTrigger>
+                    <TabsTrigger value="Drinks" className="text-xs rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">Drinks</TabsTrigger>
                 </TabsList>
-                <ScrollArea className="flex-1 mt-3 -mx-2">
+                <ScrollArea className="flex-1 mt-2 -mx-2">
                     <div className="px-2">
                         {menuLoading ? (
-                          <div className="flex items-center justify-center py-8">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                            <span className="ml-2 text-sm text-muted-foreground">Loading menu...</span>
+                          <div className="flex items-center justify-center py-6">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                            <span className="ml-2 text-xs text-muted-foreground">Loading menu...</span>
                           </div>
                         ) : menuError ? (
-                          <div className="flex items-center justify-center py-8">
-                            <p className="text-sm text-destructive">Failed to load menu items</p>
+                          <div className="flex items-center justify-center py-6">
+                            <p className="text-xs text-destructive">Failed to load menu items</p>
                           </div>
                         ) : (
                           ['Starters', 'Mains', 'Drinks'].map((category) => (
                         <TabsContent key={category} value={category} className="mt-0">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                             {filteredMenuItems
                                 .filter((item) => item.category === category)
                                 .map((item) => (
-                                <div key={item.id} className="border rounded-xl p-2 flex flex-col text-center bg-card hover:shadow-md transition-shadow">
+                                <div key={item.id} className="border rounded-lg p-1.5 flex flex-col text-center bg-card hover:shadow-md transition-shadow">
                                     <Image
                                         src={item.image}
                                         alt={item.name}
-                                        width={150}
-                                        height={150}
+                                        width={120}
+                                        height={120}
                                         className="rounded-md mx-auto aspect-square object-cover"
                                         data-ai-hint={`${item.category.toLowerCase()} food`}
                                     />
-                                    <h4 className="font-semibold mt-2 flex-1 text-xs">{item.name}</h4>
-                                    <p className="text-muted-foreground text-xs">${item.price.toFixed(2)}</p>
-                                    <Button size="sm" className="mt-2 w-full rounded-md h-8 text-xs" onClick={() => handleAddItem(item)}>
-                                    <Plus className="mr-1 h-4 w-4" /> Add
+                                    <h4 className="font-semibold mt-1 flex-1 text-xs">{item.name}</h4>
+                                    <p className="text-muted-foreground text-xs">{formatPrice(item.price)}</p>
+                                    <Button size="sm" className="mt-1 w-full rounded-md h-7 text-xs" onClick={() => handleAddItem(item)}>
+                                    <Plus className="mr-1 h-3 w-3" /> Add
                                     </Button>
                                 </div>
                                 ))}
@@ -372,39 +372,39 @@ export default function OrderPopup({ isOpen, onOpenChange, table, onClose }: Ord
             </div>
 
             {/* Cart Summary */}
-            <div className="md:col-span-1 bg-card rounded-xl flex flex-col h-full border">
-                <div className="p-4 border-b flex-shrink-0">
-                <h3 className="text-base font-semibold flex items-center">
-                    <ShoppingCart className="mr-2 h-5 w-5 text-primary"/>
+            <div className="md:col-span-1 bg-card rounded-lg flex flex-col h-full border">
+                <div className="p-3 border-b flex-shrink-0">
+                <h3 className="text-sm font-semibold flex items-center">
+                    <ShoppingCart className="mr-1 h-4 w-4 text-primary"/>
                     Add Order
                 </h3>
                 </div>
                 <ScrollArea className="flex-1">
-                    <div className="p-3 space-y-3">
+                    <div className="p-2 space-y-2">
                         {isLoadingExisting ? (
-                            <div className="flex items-center justify-center py-4">
+                            <div className="flex items-center justify-center py-3">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                                <span className="text-sm text-muted-foreground">Loading existing orders...</span>
+                                <span className="text-xs text-muted-foreground">Loading existing orders...</span>
                             </div>
                         ) : orderItems.length === 0 ? (
-                            <p className="text-center text-muted-foreground mt-6 text-sm">No items in order yet.</p>
+                            <p className="text-center text-muted-foreground mt-4 text-xs">No items in order yet.</p>
                         ) : (
                             orderItems.map((item) => (
-                            <div key={item.id} className="flex items-center justify-between gap-2">
-                                <div className='flex items-center gap-2 overflow-hidden'>
-                                    <Image src={item.image} alt={item.name} width={40} height={40} className="rounded-md aspect-square object-cover flex-shrink-0" />
+                            <div key={item.id} className="flex items-center justify-between gap-1">
+                                <div className='flex items-center gap-1 overflow-hidden'>
+                                    <Image src={item.image} alt={item.name} width={32} height={32} className="rounded-md aspect-square object-cover flex-shrink-0" />
                                     <div className="overflow-hidden">
                                         <p className="font-medium text-xs truncate">{item.name}</p>
-                                        <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
+                                        <p className="text-xs text-muted-foreground">{formatPrice(item.price)}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1 flex-shrink-0">
-                                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-md" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}>
-                                        <Minus className="h-4 w-4" />
+                                    <Button variant="outline" size="icon" className="h-6 w-6 rounded-md" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}>
+                                        <Minus className="h-3 w-3" />
                                     </Button>
-                                    <span className='font-medium w-4 text-center text-sm'>{item.quantity}</span>
-                                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-md" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}>
-                                        <Plus className="h-4 w-4" />
+                                    <span className='font-medium w-4 text-center text-xs'>{item.quantity}</span>
+                                    <Button variant="outline" size="icon" className="h-6 w-6 rounded-md" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}>
+                                        <Plus className="h-3 w-3" />
                                     </Button>
                                 </div>
                             </div>
@@ -413,24 +413,24 @@ export default function OrderPopup({ isOpen, onOpenChange, table, onClose }: Ord
                     </div>
                 </ScrollArea>
                 {orderItems.length > 0 && (
-                    <div className="p-4 mt-auto border-t flex-shrink-0">
-                        <Separator className="my-3"/>
-                        <div className="flex justify-between font-bold text-base mb-3">
+                    <div className="p-3 mt-auto border-t flex-shrink-0">
+                        <Separator className="my-2"/>
+                        <div className="flex justify-between font-bold text-sm mb-2">
                             <span>Total:</span>
-                            <span>${total.toFixed(2)}</span>
+                            <span>{formatPriceWithDecimals(total)}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" className="h-10 rounded-lg text-sm" onClick={onClose} disabled={orderLoading}>
+                            <Button variant="outline" className="h-8 rounded-lg text-xs" onClick={onClose} disabled={orderLoading}>
                               Cancel
                             </Button>
                             <Button 
-                              className="h-10 rounded-lg text-sm shadow-lg shadow-primary/30" 
+                              className="h-8 rounded-lg text-xs shadow-lg shadow-primary/30" 
                               onClick={handleConfirmOrder}
                               disabled={orderLoading || !checkForChanges()}
                             >
                               {orderLoading ? (
                                 <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
                                   Processing...
                                 </>
                               ) : orderItems.length === 0 ? (

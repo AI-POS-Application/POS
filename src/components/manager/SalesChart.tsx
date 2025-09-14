@@ -1,5 +1,6 @@
 'use client';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { formatPriceWithDecimals } from '@/lib/utils';
 
 interface SalesChartProps {
   data?: Array<{
@@ -12,14 +13,14 @@ export default function SalesChart({ data = [] }: SalesChartProps) {
   // If no data provided, show empty state
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+      <div className="flex items-center justify-center h-[250px] text-muted-foreground">
         <p>No sales data available</p>
       </div>
     );
   }
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
+    <ResponsiveContainer width="100%" height={250}>
       <BarChart data={data}>
         <XAxis
           dataKey="date"
@@ -54,7 +55,7 @@ export default function SalesChart({ data = [] }: SalesChartProps) {
                         Sales
                       </span>
                       <span className="font-bold">
-                        ${payload[0].value?.toFixed(2) || 0}
+                        {formatPriceWithDecimals(Number(payload[0].value) || 0)}
                       </span>
                     </div>
                   </div>

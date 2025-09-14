@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Clock, CheckCircle, AlertCircle, Users, DollarSign, Calendar, Search, Plus, Eye, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatPrice, formatPriceWithDecimals } from '@/lib/utils';
 import Image from 'next/image';
 
 const ORDER_STATUSES: { value: OrderStatus; label: string; color: string; icon: any }[] = [
@@ -94,12 +95,40 @@ export default function OrdersPage() {
   };
 
   const filteredOrders = orders?.filter(order => {
-    const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
+    // Handle status filtering with special cases
+    let matchesStatus = false;
+    if (statusFilter === 'All') {
+      matchesStatus = true;
+    } else if (statusFilter === 'In Progress') {
+      matchesStatus = ['Pending', 'Preparing'].includes(order.status);
+    } else if (statusFilter === 'Ready to Served') {
+      matchesStatus = order.status === 'Ready';
+    } else if (statusFilter === 'Waiting for Payment') {
+      matchesStatus = order.status === 'Served';
+    } else {
+      matchesStatus = order.status === statusFilter;
+    }
+
+    // Enhanced search functionality - search by order ID, customer name, or table number
     const matchesSearch = searchTerm === '' || 
       order.id.toString().includes(searchTerm) || 
-      getCustomerName(order.id).toLowerCase().includes(searchTerm.toLowerCase());
+      getCustomerName(order.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.tableNumber.toString().includes(searchTerm);
+    
     return matchesStatus && matchesSearch;
   }) || [];
+
+  // Group orders by table number
+  const ordersByTable = filteredOrders.reduce((acc, order) => {
+    const tableNumber = order.tableNumber.toString();
+    if (!acc[tableNumber]) {
+      acc[tableNumber] = [];
+    }
+    acc[tableNumber].push(order);
+    return acc;
+  }, {} as Record<string, Order[]>);
+
+  // Remove table filter logic since we're using search instead
 
   const sortedOrders = [...filteredOrders].sort((a, b) => {
     switch (sortBy) {
@@ -122,10 +151,10 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+      <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-muted-foreground">Loading orders...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-xs text-muted-foreground">Loading orders...</p>
         </div>
       </div>
     );
@@ -133,11 +162,11 @@ export default function OrdersPage() {
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+      <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
         <div className="text-center">
-          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-          <p className="text-destructive">Failed to load orders</p>
-          <Button onClick={() => refetch()} className="mt-2">
+          <AlertCircle className="h-6 w-6 text-destructive mx-auto mb-2" />
+          <p className="text-destructive text-sm">Failed to load orders</p>
+          <Button onClick={() => refetch()} className="mt-2 h-8 text-xs">
             Try Again
           </Button>
         </div>
@@ -146,36 +175,36 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="flex-1 p-4 sm:p-6 space-y-6">
+    <div className="flex-1 p-3 sm:p-4 space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Calendar className="h-8 w-8" />
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
             Orders
           </h1>
-          <p className="text-muted-foreground">Manage and track all restaurant orders</p>
+          <p className="text-xs text-muted-foreground">Manage and track all restaurant orders</p>
         </div>
       </div>
 
       {/* Search and Create Section */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
+      <div className="flex flex-col sm:flex-row gap-3 items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search Order ID or Customer Name"
-            className="pl-9 h-10"
+            placeholder="Search Order ID, Customer Name, or Table Number"
+            className="pl-9 h-9 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2 h-9 text-sm">
           <Plus className="h-4 w-4" />
           Create New Order
         </Button>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Status Filter Tabs */}
       <div className="flex flex-wrap gap-2">
         {[
           { label: 'All', count: orders?.length || 0 },
@@ -186,7 +215,7 @@ export default function OrdersPage() {
           <Button
             key={filter.label}
             variant={statusFilter === filter.label ? "default" : "outline"}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 h-8 text-xs"
             onClick={() => setStatusFilter(filter.label)}
           >
             {filter.label} {filter.count}
@@ -197,7 +226,7 @@ export default function OrdersPage() {
       {/* Sort Section */}
       <div className="flex justify-end">
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-40 h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -208,25 +237,53 @@ export default function OrdersPage() {
         </Select>
       </div>
 
-      {/* Orders Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sortedOrders.length === 0 ? (
-          <div className="col-span-full">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-8">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Orders Found</h3>
-                <p className="text-muted-foreground text-center">
-                  {statusFilter === 'All' 
-                    ? 'No orders have been placed yet.' 
-                    : `No orders with status "${statusFilter}" found.`
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          sortedOrders.map((order) => {
+      {/* Orders by Table */}
+      {Object.keys(ordersByTable).length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-6">
+            <AlertCircle className="h-8 w-8 text-muted-foreground mb-3" />
+            <h3 className="text-base font-semibold mb-2">No Orders Found</h3>
+            <p className="text-xs text-muted-foreground text-center">
+              {statusFilter === 'All' && searchTerm === ''
+                ? 'No orders have been placed yet.' 
+                : `No orders found with current filters.`
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(ordersByTable)
+            .sort(([a], [b]) => parseInt(a) - parseInt(b))
+            .map(([tableNumber, tableOrders]) => (
+              <div key={tableNumber} className="space-y-3">
+                {/* Table Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded flex items-center justify-center text-sm font-semibold">
+                      {String.fromCharCode(65 + (parseInt(tableNumber) % 26))}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Table {tableNumber}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {tableOrders.length} order{tableOrders.length !== 1 ? 's' : ''} • 
+                        {tableOrders.some(o => ['Pending', 'Preparing'].includes(o.status)) && ' In Progress'}
+                        {tableOrders.some(o => o.status === 'Ready') && ' Ready to Serve'}
+                        {tableOrders.some(o => o.status === 'Served') && ' Waiting for Payment'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">
+                      {formatPriceWithDecimals(tableOrders.reduce((sum, order) => sum + order.totalAmount, 0))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Total</p>
+                  </div>
+                </div>
+
+                {/* Orders for this table */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {tableOrders.map((order) => {
             const statusInfo = getStatusInfo(order.status);
             const progressPercentage = getProgressPercentage(order.status);
             const orderType = getOrderType(order.id);
@@ -236,15 +293,15 @@ export default function OrdersPage() {
             return (
               <Card key={order.id} className="hover:shadow-lg transition-shadow cursor-pointer" 
                     onClick={() => setSelectedOrder(order)}>
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   {/* Order Header */}
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-semibold text-lg">
+                      <h3 className="font-semibold text-sm">
                         Order# DI{order.id.toString().padStart(3, '0')} / {orderType}
                       </h3>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                       {new Date(order.createdAt).toLocaleDateString('en-US', { 
                         weekday: 'short', 
                         month: 'short', 
@@ -257,29 +314,29 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Customer Info */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 bg-primary text-primary-foreground rounded flex items-center justify-center text-sm font-semibold">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded flex items-center justify-center text-xs font-semibold">
                       {String.fromCharCode(65 + (order.tableNumber % 26))}{order.tableNumber}
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Customer Name</p>
-                      <p className="font-medium">{customerName}</p>
+                      <p className="text-xs text-muted-foreground">Customer Name</p>
+                      <p className="font-medium text-sm">{customerName}</p>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium">
+                  <div className="mb-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-medium">
                         {progressPercentage}% {statusInfo.label}
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {order.items?.length || 0} Items →
                       </span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-1.5">
                       <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
                           progressPercentage < 30 ? 'bg-yellow-500' :
                           progressPercentage < 70 ? 'bg-orange-500' :
                           progressPercentage < 100 ? 'bg-green-500' : 'bg-blue-500'
@@ -290,44 +347,44 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Order Items */}
-                  <div className="space-y-2 mb-4">
+                  <div className="space-y-1 mb-3">
                     <div className="grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground border-b pb-1">
                       <span>Items</span>
                       <span className="text-center">Qty</span>
                       <span className="text-right">Price</span>
                     </div>
-                    {order.items?.slice(0, 4).map((item: any) => {
+                    {order.items?.slice(0, 3).map((item: any) => {
                       const itemKey = `${order.id}-${item.id}`;
                       const isCompleted = itemStatuses[itemKey] || false;
                       
                       return (
-                        <div key={item.id} className="grid grid-cols-3 gap-2 text-sm">
-                          <div className="flex items-center gap-2">
+                        <div key={item.id} className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="flex items-center gap-1">
                             <Checkbox
                               checked={isCompleted}
                               onCheckedChange={() => handleItemStatusToggle(order.id, item.id)}
-                              className="h-4 w-4"
+                              className="h-3 w-3"
                             />
                             <span className={`truncate ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
                               {item.itemName}
                             </span>
                           </div>
                           <span className="text-center">{item.quantity}</span>
-                          <span className="text-right font-medium">${item.subtotal.toFixed(2)}</span>
+                          <span className="text-right font-medium">{formatPriceWithDecimals(item.subtotal)}</span>
                         </div>
                       );
                     })}
-                    {order.items && order.items.length > 4 && (
+                    {order.items && order.items.length > 3 && (
                       <div className="text-xs text-muted-foreground text-center">
-                        +{order.items.length - 4} more items
+                        +{order.items.length - 3} more items
                       </div>
                     )}
                   </div>
 
                   {/* Total */}
-                  <div className="flex justify-between items-center mb-4 pt-2 border-t">
-                    <span className="font-semibold">Total</span>
-                    <span className="text-lg font-bold">${order.totalAmount.toFixed(2)}</span>
+                  <div className="flex justify-between items-center mb-3 pt-2 border-t">
+                    <span className="font-semibold text-sm">Total</span>
+                    <span className="text-base font-bold">{formatPriceWithDecimals(order.totalAmount)}</span>
                   </div>
 
                   {/* Action Buttons */}
@@ -335,18 +392,18 @@ export default function OrdersPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="flex-1 flex items-center gap-2"
+                      className="flex-1 flex items-center gap-1 h-8 text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedOrder(order);
                       }}
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-3 w-3" />
                       See Details
                     </Button>
                     <Button 
                       size="sm" 
-                      className="flex-1 flex items-center gap-2"
+                      className="flex-1 flex items-center gap-1 h-8 text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (nextStatus) {
@@ -355,73 +412,76 @@ export default function OrdersPage() {
                       }}
                       disabled={!nextStatus || updating}
                     >
-                      <CreditCard className="h-4 w-4" />
+                      <CreditCard className="h-3 w-3" />
                       Pay Bills
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             );
-          })
-        )}
-      </div>
+                  })}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
 
       {/* Selected Order Details Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
+          <Card className="w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+            <CardHeader className="px-3 py-2">
               <div className="flex justify-between items-center">
-                <CardTitle>Order Details - #{selectedOrder.id}</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>
+                <CardTitle className="text-sm">Order Details - #{selectedOrder.id}</CardTitle>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setSelectedOrder(null)}>
                   ×
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+            <CardContent className="px-3 pb-3">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-muted-foreground">Order Type:</span>
-                    <p className="font-medium">{getOrderType(selectedOrder.id)}</p>
+                    <p className="font-medium text-sm">{getOrderType(selectedOrder.id)}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Table:</span>
-                    <p className="font-medium">{selectedOrder.tableNumber}</p>
+                    <p className="font-medium text-sm">{selectedOrder.tableNumber}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Status:</span>
-                    <p className="font-medium">{selectedOrder.status}</p>
+                    <p className="font-medium text-sm">{selectedOrder.status}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Total:</span>
-                    <p className="font-medium">${selectedOrder.totalAmount.toFixed(2)}</p>
+                    <p className="font-medium text-sm">{formatPriceWithDecimals(selectedOrder.totalAmount)}</p>
                   </div>
                 </div>
                 
                 <Separator />
                 
                 <div>
-                  <h4 className="font-semibold mb-3">Order Items</h4>
-                  <div className="space-y-2">
+                  <h4 className="font-semibold mb-2 text-sm">Order Items</h4>
+                  <div className="space-y-1">
                     {selectedOrder.items?.map((item: any) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
+                      <div key={item.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                        <div className="flex items-center gap-2">
                           <Image
                             src={item.image}
                             alt={item.itemName}
-                            width={40}
-                            height={40}
+                            width={32}
+                            height={32}
                             className="rounded-md aspect-square object-cover"
                           />
                           <div>
-                            <p className="font-medium">{item.itemName}</p>
-                            <p className="text-sm text-muted-foreground capitalize">{item.category}</p>
+                            <p className="font-medium text-xs">{item.itemName}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{item.category}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">${item.subtotal.toFixed(2)}</p>
-                          <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                          <p className="font-medium text-xs">{formatPriceWithDecimals(item.subtotal)}</p>
+                          <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                         </div>
                       </div>
                     ))}
