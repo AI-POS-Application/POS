@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database';
-import type { MenuItem, MenuCategory } from '@/lib/types';
+import { getMenuItems, getMenuItemsByCategory, getAvailableMenuItems, createMenuItem } from '@/services/menuItems';
 
 /**
  * GET /api/menu - Retrieves all menu items
@@ -13,35 +12,15 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const available = searchParams.get('available');
     
-    const db = getDatabase();
+    let menuItems;
     
-    let query = `
-      SELECT id, name, price, category, image, is_available as isAvailable,
-             created_at as createdAt, updated_at as updatedAt
-      FROM menu_items
-    `;
-    
-    const conditions: string[] = [];
-    const params: any[] = [];
-    
-    if (category) {
-      conditions.push('category = ?');
-      params.push(category);
+    if (available === 'true') {
+      menuItems = await getAvailableMenuItems();
+    } else if (category) {
+      menuItems = await getMenuItemsByCategory(category);
+    } else {
+      menuItems = await getMenuItems();
     }
-    
-    if (available !== null) {
-      conditions.push('is_available = ?');
-      params.push(available === 'true' ? 1 : 0);
-    }
-    
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-    
-    query += ' ORDER BY category, name ASC';
-    
-    const stmt = db.prepare(query);
-    const menuItems = stmt.all(...params) as MenuItem[];
     
     return NextResponse.json(menuItems);
   } catch (error) {
@@ -61,23 +40,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, price, category, image, isAvailable = true } = body;
+    const { name, price, category, description, isAvailable = true } = body;
     
-    if (!name || !price || !category || !image) {
+    if (!name || !price || !category) {
       return NextResponse.json(
-        { error: 'Name, price, category, and image are required' }, 
-        { status: 400 }
-      );
-    }
-    
-    const validCategories: MenuCategory[] = [
-      'Indian Breakfast', 'Western Breakfast', 'North Indian Main Course', 
-      'Biryani', 'Rice', 'Indian Breads', 'Pasta', 'Western Full Plate', 
-      'Cold Beverages', 'Tea & Coffee'
-    ];
-    if (!validCategories.includes(category)) {
-      return NextResponse.json(
-        { error: 'Invalid category. Must be one of the valid menu categories' }, 
+        { error: 'Name, price, and category are required' }, 
         { status: 400 }
       );
     }
@@ -89,21 +56,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const db = getDatabase();
-    
-    const stmt = db.prepare(`
-      INSERT INTO menu_items (name, price, category, image, is_available) 
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(name, price, category, image, isAvailable ? 1 : 0);
-    
-    const createdItem = db.prepare(`
-      SELECT id, name, price, category, image, is_available as isAvailable,
-             created_at as createdAt, updated_at as updatedAt
-      FROM menu_items 
-      WHERE id = ?
-    `).get(result.lastInsertRowid) as MenuItem;
+    const createdItem = await createMenuItem({
+      name,
+      price,
+      category,
+      description,
+      isAvailable
+    });
     
     return NextResponse.json(createdItem, { status: 201 });
   } catch (error) {

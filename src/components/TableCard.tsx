@@ -16,22 +16,27 @@ const statusConfig: { [key in TableStatus]: {
   badgeVariant: "default" | "secondary" | "destructive" | "outline";
   cardClass: string;
 }} = {
-  Free: {
+  available: {
     icon: <Utensils className="h-4 w-4 text-green-500" />,
     badgeVariant: 'secondary',
     cardClass: 'bg-green-500/5 hover:border-green-500/50',
   },
-  Occupied: {
+  occupied: {
     icon: <Users className="h-4 w-4 text-orange-500" />,
     badgeVariant: 'outline',
     cardClass: 'bg-orange-500/5 hover:border-orange-500/50',
   },
-  Serving: {
+  reserved: {
+    icon: <BellRing className="h-4 w-4 text-purple-500" />,
+    badgeVariant: 'default',
+    cardClass: 'bg-purple-500/5 hover:border-purple-500/50',
+  },
+  serving: {
     icon: <BellRing className="h-4 w-4 text-blue-500" />,
     badgeVariant: 'default',
     cardClass: 'bg-blue-500/5 hover:border-blue-500/50',
   },
-  Billing: {
+  billing: {
     icon: <Receipt className="h-4 w-4 text-red-500" />,
     badgeVariant: 'destructive',
     cardClass: 'bg-red-500/5 border-red-500/20 cursor-not-allowed opacity-80',
@@ -39,10 +44,11 @@ const statusConfig: { [key in TableStatus]: {
 };
 
 const badgeColors = {
-  Free: "bg-green-100 text-green-800 border-green-200",
-  Occupied: "bg-orange-100 text-orange-800 border-orange-200",
-  Serving: "bg-blue-100 text-blue-800 border-blue-200",
-  Billing: "bg-red-100 text-red-800 border-red-200"
+  available: "bg-green-100 text-green-800 border-green-200",
+  occupied: "bg-orange-100 text-orange-800 border-orange-200",
+  reserved: "bg-purple-100 text-purple-800 border-purple-200",
+  serving: "bg-blue-100 text-blue-800 border-blue-200",
+  billing: "bg-red-100 text-red-800 border-red-200"
 }
 
 export default function TableCard({ table, onClick }: TableCardProps) {
@@ -50,11 +56,11 @@ export default function TableCard({ table, onClick }: TableCardProps) {
 
   return (
     <Card
-      onClick={table.status !== 'Billing' ? onClick : undefined}
+      onClick={table.status !== 'billing' ? onClick : undefined}
       className={cn(
         'cursor-pointer transition-all duration-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 rounded-xl border',
         config.cardClass,
-        table.status === 'Billing' && 'cursor-not-allowed hover:transform-none'
+        table.status === 'billing' && 'cursor-not-allowed hover:transform-none'
       )}
     >
       <CardContent className="p-2 flex flex-col items-start justify-between h-full">
@@ -69,9 +75,9 @@ export default function TableCard({ table, onClick }: TableCardProps) {
           <Badge variant={config.badgeVariant} className={cn("text-xs font-medium", badgeColors[table.status])}>
             {table.status}
           </Badge>
-          {table.status === 'Occupied' && table.customerCount && (
+          {table.status === 'occupied' && table.capacity && (
             <Badge variant="outline" className={cn("text-xs font-medium", badgeColors[table.status])}>
-              {table.customerCount}
+              {table.capacity} seats
             </Badge>
           )}
         </div>

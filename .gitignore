@@ -43,3 +43,11 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# database
+dev.db
+*.sqlite
+*.sqlite3
+
+# prisma
+/prisma/migrations

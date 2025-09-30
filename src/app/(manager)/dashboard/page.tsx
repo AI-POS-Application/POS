@@ -60,35 +60,35 @@ export default function ManagerDashboard() {
   const kpiData = [
     { 
       title: "Today's Sales", 
-      value: dashboardData.kpis.todaysSales.value, 
+      value: formatPriceWithDecimals(dashboardData.sales.today), 
       icon: <DollarSign className="h-5 w-5 text-muted-foreground" />, 
-      change: dashboardData.kpis.todaysSales.change,
-      isPositive: dashboardData.kpis.todaysSales.isPositive,
-      trend: dashboardData.kpis.todaysSales.isPositive ? 'up' : 'down'
+      change: `${dashboardData.sales.change > 0 ? '+' : ''}${dashboardData.sales.change.toFixed(1)}%`,
+      isPositive: dashboardData.sales.change >= 0,
+      trend: dashboardData.sales.change >= 0 ? 'up' : 'down'
     },
     { 
       title: "Active Tables", 
-      value: dashboardData.kpis.activeTables.value, 
+      value: `${dashboardData.tables.active}/${dashboardData.tables.total}`, 
       icon: <Utensils className="h-5 w-5 text-muted-foreground" />, 
-      change: dashboardData.kpis.activeTables.change,
+      change: `${dashboardData.tables.utilization.toFixed(1)}% utilization`,
       isPositive: true,
       trend: 'neutral'
     },
     { 
       title: "Staff on Duty", 
-      value: dashboardData.kpis.staffOnDuty.value, 
+      value: `${dashboardData.staff.onDuty}/${dashboardData.staff.total}`, 
       icon: <Users className="h-5 w-5 text-muted-foreground" />, 
-      change: dashboardData.kpis.staffOnDuty.change,
+      change: "All staff active",
       isPositive: true,
       trend: 'neutral'
     },
     { 
-      title: "Total Orders", 
-      value: dashboardData.kpis.totalOrders.value, 
+      title: "Today's Orders", 
+      value: dashboardData.orders.today.toString(), 
       icon: <ShoppingCart className="h-5 w-5 text-muted-foreground" />, 
-      change: dashboardData.kpis.totalOrders.change,
-      isPositive: dashboardData.kpis.totalOrders.isPositive,
-      trend: dashboardData.kpis.totalOrders.isPositive ? 'up' : 'down'
+      change: `${dashboardData.orders.change > 0 ? '+' : ''}${dashboardData.orders.change.toFixed(1)}%`,
+      isPositive: dashboardData.orders.change >= 0,
+      trend: dashboardData.orders.change >= 0 ? 'up' : 'down'
     },
   ];
 
@@ -145,7 +145,7 @@ export default function ManagerDashboard() {
                 </CardHeader>
                 <CardContent className="px-3 pb-3 flex-1 flex flex-col">
                     <div className="flex-1">
-                        <SalesChart data={dashboardData.salesChart} />
+                        <SalesChart data={dashboardData.sales.chart} />
                     </div>
                 </CardContent>
             </Card>
@@ -182,7 +182,7 @@ export default function ManagerDashboard() {
                       <div className="text-right">
                         <p className="text-xs font-medium">{formatPriceWithDecimals(order.totalAmount)}</p>
                         <Badge 
-                          variant={order.status === 'Paid' ? 'default' : 'secondary'}
+                          variant={order.status === 'paid' ? 'default' : 'secondary'}
                           className="text-xs"
                         >
                           {order.status}

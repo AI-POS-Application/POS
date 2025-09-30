@@ -17,11 +17,11 @@ import { formatPrice, formatPriceWithDecimals } from '@/lib/utils';
 import Image from 'next/image';
 
 const ORDER_STATUSES: { value: OrderStatus; label: string; color: string; icon: any }[] = [
-  { value: 'Pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  { value: 'Preparing', label: 'Preparing', color: 'bg-orange-100 text-orange-800', icon: Clock },
-  { value: 'Ready', label: 'Ready', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  { value: 'Served', label: 'Served', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
-  { value: 'Paid', label: 'Paid', color: 'bg-gray-100 text-gray-800', icon: CheckCircle },
+  { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  { value: 'preparing', label: 'Preparing', color: 'bg-orange-100 text-orange-800', icon: Clock },
+  { value: 'ready', label: 'Ready', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+  { value: 'served', label: 'Served', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
+  { value: 'paid', label: 'Paid', color: 'bg-gray-100 text-gray-800', icon: CheckCircle },
 ];
 
 export default function OrdersPage() {
@@ -100,11 +100,11 @@ export default function OrdersPage() {
     if (statusFilter === 'All') {
       matchesStatus = true;
     } else if (statusFilter === 'In Progress') {
-      matchesStatus = ['Pending', 'Preparing'].includes(order.status);
+      matchesStatus = ['pending', 'preparing'].includes(order.status);
     } else if (statusFilter === 'Ready to Served') {
-      matchesStatus = order.status === 'Ready';
+      matchesStatus = order.status === 'ready';
     } else if (statusFilter === 'Waiting for Payment') {
-      matchesStatus = order.status === 'Served';
+      matchesStatus = order.status === 'served';
     } else {
       matchesStatus = order.status === statusFilter;
     }
@@ -113,14 +113,14 @@ export default function OrdersPage() {
     const matchesSearch = searchTerm === '' || 
       order.id.toString().includes(searchTerm) || 
       getCustomerName(order.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.tableNumber.toString().includes(searchTerm);
+      (order.tableNumber && order.tableNumber.toString().includes(searchTerm));
     
     return matchesStatus && matchesSearch;
   }) || [];
 
   // Group orders by table number
   const ordersByTable = filteredOrders.reduce((acc, order) => {
-    const tableNumber = order.tableNumber.toString();
+    const tableNumber = order.tableNumber?.toString() || 'Unknown';
     if (!acc[tableNumber]) {
       acc[tableNumber] = [];
     }

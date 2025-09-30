@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database';
-import type { Table, TableStatus } from '@/lib/types';
+import { getTables, createTable } from '@/services/tables';
 
 /**
  * GET /api/tables - Retrieves all tables
@@ -8,17 +7,7 @@ import type { Table, TableStatus } from '@/lib/types';
  */
 export async function GET() {
   try {
-    const db = getDatabase();
-    
-    const stmt = db.prepare(`
-      SELECT id, number, status, customer_count as customerCount, 
-             created_at as createdAt, updated_at as updatedAt
-      FROM tables 
-      ORDER BY number ASC
-    `);
-    
-    const tables = stmt.all() as Table[];
-    
+    const tables = await getTables();
     return NextResponse.json(tables);
   } catch (error) {
     console.error('Error fetching tables:', error);
@@ -37,7 +26,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { number, status = 'Free', customerCount } = body;
+    const { number, capacity } = body;
     
     if (!number || typeof number !== 'number') {
       return NextResponse.json(
@@ -45,28 +34,21 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (!capacity || typeof capacity !== 'number') {
+      return NextResponse.json(
+        { error: 'Table capacity is required and must be a number' }, 
+        { status: 400 }
+      );
+    }
     
-    const db = getDatabase();
-    
-    const stmt = db.prepare(`
-      INSERT INTO tables (number, status, customer_count) 
-      VALUES (?, ?, ?)
-    `);
-    
-    const result = stmt.run(number, status, customerCount || null);
-    
-    const createdTable = db.prepare(`
-      SELECT id, number, status, customer_count as customerCount,
-             created_at as createdAt, updated_at as updatedAt
-      FROM tables 
-      WHERE id = ?
-    `).get(result.lastInsertRowid) as Table;
+    const createdTable = await createTable(number, capacity);
     
     return NextResponse.json(createdTable, { status: 201 });
   } catch (error: any) {
     console.error('Error creating table:', error);
     
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    if (error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Table number already exists' }, 
         { status: 409 }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database';
-import type { StaffMember, StaffRole } from '@/lib/types';
+import { getStaff, getStaffByRole, createStaff } from '@/services/staff';
 
 /**
  * GET /api/staff - Retrieves all staff members
@@ -10,38 +9,15 @@ import type { StaffMember, StaffRole } from '@/lib/types';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
     const role = searchParams.get('role');
     
-    const db = getDatabase();
-    
-    let query = `
-      SELECT id, name, role, shift, status, avatar,
-             created_at as createdAt, updated_at as updatedAt
-      FROM staff
-    `;
-    
-    const conditions: string[] = [];
-    const params: any[] = [];
-    
-    if (status) {
-      conditions.push('status = ?');
-      params.push(status);
-    }
+    let staffMembers;
     
     if (role) {
-      conditions.push('role = ?');
-      params.push(role);
+      staffMembers = await getStaffByRole(role);
+    } else {
+      staffMembers = await getStaff();
     }
-    
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-    
-    query += ' ORDER BY name ASC';
-    
-    const stmt = db.prepare(query);
-    const staffMembers = stmt.all(...params) as StaffMember[];
     
     return NextResponse.json(staffMembers);
   } catch (error) {
@@ -61,46 +37,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, role, shift, status = 'Off Duty', avatar } = body;
+    const { name, role } = body;
     
-    if (!name || !role || !shift || !avatar) {
+    if (!name || !role) {
       return NextResponse.json(
-        { error: 'Name, role, shift, and avatar are required' }, 
+        { error: 'Name and role are required' }, 
         { status: 400 }
       );
     }
     
-    const validRoles: StaffRole[] = ['Manager', 'Head Waiter', 'Waiter', 'Chef', 'Sous Chef', 'Hostess'];
-    if (!validRoles.includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role' }, 
-        { status: 400 }
-      );
-    }
-    
-    const validStatuses = ['On Shift', 'Off Duty'];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status. Must be "On Shift" or "Off Duty"' }, 
-        { status: 400 }
-      );
-    }
-    
-    const db = getDatabase();
-    
-    const stmt = db.prepare(`
-      INSERT INTO staff (name, role, shift, status, avatar) 
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(name, role, shift, status, avatar);
-    
-    const createdStaff = db.prepare(`
-      SELECT id, name, role, shift, status, avatar,
-             created_at as createdAt, updated_at as updatedAt
-      FROM staff 
-      WHERE id = ?
-    `).get(result.lastInsertRowid) as StaffMember;
+    const createdStaff = await createStaff(name, role);
     
     return NextResponse.json(createdStaff, { status: 201 });
   } catch (error) {

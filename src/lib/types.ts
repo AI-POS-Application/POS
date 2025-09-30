@@ -1,10 +1,10 @@
-export type TableStatus = 'Free' | 'Occupied' | 'Serving' | 'Billing';
+export type TableStatus = 'available' | 'occupied' | 'reserved' | 'serving' | 'billing';
 
 export interface Table {
   id: number;
   number: number;
+  capacity: number;
   status: TableStatus;
-  customerCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,7 +49,7 @@ export interface StaffMember {
     updatedAt?: string;
 }
 
-export type OrderStatus = 'Pending' | 'Preparing' | 'Ready' | 'Served' | 'Paid';
+export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'served' | 'paid';
 
 /**
  * Order interface representing a complete order in the system
@@ -57,12 +57,16 @@ export type OrderStatus = 'Pending' | 'Preparing' | 'Ready' | 'Served' | 'Paid';
 export interface Order {
   id: number;
   tableId: number;
-  tableNumber: number;
-  totalAmount: number;
+  staffId: number;
   status: OrderStatus;
-  staffId?: number;
+  total: number;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
+  // Computed fields for frontend compatibility
+  tableNumber?: number;
+  totalAmount?: number;
+  staffName?: string;
   // Relations
   table?: Table;
   staff?: StaffMember;
@@ -77,9 +81,16 @@ export interface OrderItemDB {
   orderId: number;
   menuItemId: number;
   quantity: number;
-  unitPrice: number;
-  subtotal: number;
+  price: number;
+  notes?: string;
   createdAt: string;
+  updatedAt: string;
+  // Computed fields for frontend compatibility
+  unitPrice?: number;
+  subtotal?: number;
+  itemName?: string;
+  category?: string;
+  image?: string;
   // Relations
   menuItem?: MenuItem;
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database';
+import { getTables } from '@/services/tables';
+import { getStaff } from '@/services/staff';
+import { getOrders } from '@/services/orders';
 
 /**
  * GET /api/dashboard - Retrieves dashboard KPI data
@@ -7,138 +9,115 @@ import { getDatabase } from '@/lib/database';
  */
 export async function GET() {
   try {
-    const db = getDatabase();
-    
     // Get today's date range
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
     
-    const todayStartISO = todayStart.toISOString();
-    const todayEndISO = todayEnd.toISOString();
+    // Get all data using service layer
+    const [tables, staff, orders] = await Promise.all([
+      getTables(),
+      getStaff(),
+      getOrders()
+    ]);
     
-    // Get today's sales
-    const salesData = db.prepare(`
-      SELECT COALESCE(SUM(total_amount), 0) as totalSales
-      FROM orders 
-      WHERE created_at >= ? AND created_at < ? AND status = 'Paid'
-    `).get(todayStartISO, todayEndISO) as { totalSales: number };
+    // Filter today's paid orders
+    const todayOrders = orders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate >= todayStart && orderDate < todayEnd && order.status === 'paid';
+    });
     
-    // Get yesterday's sales for comparison
+    // Filter yesterday's paid orders
     const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
-    const yesterdayEnd = todayStart;
+    const yesterdayOrders = orders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate >= yesterdayStart && orderDate < todayStart && order.status === 'paid';
+    });
     
-    const yesterdaySales = db.prepare(`
-      SELECT COALESCE(SUM(total_amount), 0) as totalSales
-      FROM orders 
-      WHERE created_at >= ? AND created_at < ? AND status = 'Paid'
-    `).get(yesterdayStart.toISOString(), yesterdayEnd.toISOString()) as { totalSales: number };
+    // Calculate sales
+    const todaySales = todayOrders.reduce((sum, order) => sum + (order.totalAmount || order.total || 0), 0);
+    const yesterdaySales = yesterdayOrders.reduce((sum, order) => sum + (order.totalAmount || order.total || 0), 0);
     
     // Calculate sales change percentage
-    const salesChange = yesterdaySales.totalSales > 0 
-      ? ((salesData.totalSales - yesterdaySales.totalSales) / yesterdaySales.totalSales * 100)
+    const salesChange = yesterdaySales > 0 
+      ? ((todaySales - yesterdaySales) / yesterdaySales * 100)
       : 100;
     
-    // Get active tables count (not Free)
-    const activeTablesData = db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM tables 
-      WHERE status != 'Free'
-    `).get() as { count: number };
+    // Get active tables count (not available)
+    const activeTables = tables.filter(table => table.status !== 'available').length;
+    const totalTables = tables.length;
     
-    // Get total tables for comparison
-    const totalTablesData = db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM tables
-    `).get() as { count: number };
+    // Get staff on duty count (assuming all staff are on duty for now)
+    const staffOnDuty = staff.length;
+    const totalStaff = staff.length;
     
-    // Get staff on duty count
-    const staffOnDutyData = db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM staff 
-      WHERE status = 'On Shift'
-    `).get() as { count: number };
+    // Get today's orders count
+    const todayOrdersCount = todayOrders.length;
+    const yesterdayOrdersCount = yesterdayOrders.length;
     
-    // Get total staff for comparison
-    const totalStaffData = db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM staff
-    `).get() as { count: number };
-    
-    // Get today's order count
-    const todayOrdersData = db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM orders 
-      WHERE created_at >= ? AND created_at < ?
-    `).get(todayStartISO, todayEndISO) as { count: number };
-    
-    // Get yesterday's order count for comparison
-    const yesterdayOrdersData = db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM orders 
-      WHERE created_at >= ? AND created_at < ?
-    `).get(yesterdayStart.toISOString(), yesterdayEnd.toISOString()) as { count: number };
-    
-    const ordersChange = yesterdayOrdersData.count > 0 
-      ? ((todayOrdersData.count - yesterdayOrdersData.count) / yesterdayOrdersData.count * 100)
+    // Calculate orders change percentage
+    const ordersChange = yesterdayOrdersCount > 0 
+      ? ((todayOrdersCount - yesterdayOrdersCount) / yesterdayOrdersCount * 100)
       : 100;
     
-    // Get recent orders for activity feed
-    const recentOrders = db.prepare(`
-      SELECT 
-        o.id, o.status, o.total_amount as totalAmount,
-        o.created_at as createdAt,
-        t.number as tableNumber
-      FROM orders o
-      JOIN tables t ON o.table_id = t.id
-      ORDER BY o.created_at DESC
-      LIMIT 10
-    `).all();
+    // Get recent activity (last 5 orders)
+    const recentOrders = orders
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
     
     // Get sales data for the chart (last 7 days)
     const salesChartData = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date(todayStart.getTime() - i * 24 * 60 * 60 * 1000);
-      const dateStart = date.toISOString();
-      const dateEnd = new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const dateEnd = new Date(dateStart.getTime() + 24 * 60 * 60 * 1000);
       
-      const daySales = db.prepare(`
-        SELECT COALESCE(SUM(total_amount), 0) as totalSales
-        FROM orders 
-        WHERE created_at >= ? AND created_at < ? AND status = 'Paid'
-      `).get(dateStart, dateEnd) as { totalSales: number };
+      const dayOrders = orders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= dateStart && orderDate < dateEnd && order.status === 'paid';
+      });
+      
+      const daySales = dayOrders.reduce((sum, order) => sum + (order.totalAmount || order.total || 0), 0);
       
       salesChartData.push({
-        date: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        sales: daySales.totalSales
+        date: dateStart.toISOString().split('T')[0],
+        sales: daySales
       });
     }
     
+    // Calculate table utilization percentage
+    const tableUtilization = totalTables > 0 ? (activeTables / totalTables) * 100 : 0;
+    
+    // Calculate average order value
+    const averageOrderValue = todayOrdersCount > 0 ? todaySales / todayOrdersCount : 0;
+    
     const dashboardData = {
-      kpis: {
-        todaysSales: {
-          value: `₹${salesData.totalSales.toFixed(0)}`,
-          change: `${salesChange >= 0 ? '+' : ''}${salesChange.toFixed(0)}%`,
-          isPositive: salesChange >= 0
-        },
-        activeTables: {
-          value: activeTablesData.count.toString(),
-          total: totalTablesData.count,
-          change: `${activeTablesData.count}/${totalTablesData.count}`
-        },
-        staffOnDuty: {
-          value: staffOnDutyData.count.toString(),
-          total: totalStaffData.count,
-          change: `${staffOnDutyData.count}/${totalStaffData.count}`
-        },
-        totalOrders: {
-          value: todayOrdersData.count.toString(),
-          change: `${ordersChange >= 0 ? '+' : ''}${ordersChange.toFixed(0)}%`,
-          isPositive: ordersChange >= 0
-        }
+      sales: {
+        today: todaySales,
+        change: Math.round(salesChange * 100) / 100,
+        chart: salesChartData
       },
-      salesChart: salesChartData,
-      recentActivity: recentOrders
+      tables: {
+        active: activeTables,
+        total: totalTables,
+        utilization: Math.round(tableUtilization * 100) / 100
+      },
+      staff: {
+        onDuty: staffOnDuty,
+        total: totalStaff
+      },
+      orders: {
+        today: todayOrdersCount,
+        change: Math.round(ordersChange * 100) / 100,
+        averageValue: Math.round(averageOrderValue * 100) / 100
+      },
+      recentActivity: recentOrders.map(order => ({
+        id: order.id,
+        status: order.status,
+        totalAmount: order.totalAmount || order.total || 0,
+        tableNumber: order.tableNumber || order.table?.number || 'Unknown',
+        createdAt: order.createdAt
+      }))
     };
     
     return NextResponse.json(dashboardData);

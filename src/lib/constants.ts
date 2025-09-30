@@ -3,38 +3,38 @@
  */
 
 // Order statuses for kitchen workflow
-export const KITCHEN_ORDER_STATUSES = ['Pending', 'Preparing', 'Ready'] as const;
+export const KITCHEN_ORDER_STATUSES = ['pending', 'preparing', 'ready'] as const;
 
 // Order statuses for complete workflow
-export const ALL_ORDER_STATUSES = ['Pending', 'Preparing', 'Ready', 'Served', 'Paid'] as const;
+export const ALL_ORDER_STATUSES = ['pending', 'preparing', 'ready', 'served', 'paid'] as const;
 
 // Kitchen status configuration
 export const KITCHEN_STATUS_CONFIG = {
-  Pending: {
+  pending: {
     label: 'Pending',
     color: 'bg-yellow-100 text-yellow-800',
-    nextStatus: 'Preparing' as const,
+    nextStatus: 'preparing' as const,
     icon: 'Clock' as const,
   },
-  Preparing: {
+  preparing: {
     label: 'Preparing',
     color: 'bg-orange-100 text-orange-800',
-    nextStatus: 'Ready' as const,
+    nextStatus: 'ready' as const,
     icon: 'ChefHat' as const,
   },
-  Ready: {
+  ready: {
     label: 'Ready to Serve',
     color: 'bg-green-100 text-green-800',
-    nextStatus: 'Served' as const,
+    nextStatus: 'served' as const,
     icon: 'CheckCircle' as const,
   },
-  Served: {
+  served: {
     label: 'Served',
     color: 'bg-blue-100 text-blue-800',
-    nextStatus: 'Paid' as const,
+    nextStatus: 'paid' as const,
     icon: 'CheckCircle' as const,
   },
-  Paid: {
+  paid: {
     label: 'Paid',
     color: 'bg-gray-100 text-gray-800',
     nextStatus: null,

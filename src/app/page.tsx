@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const ALL_STATUSES: TableStatus[] = ['Free', 'Occupied', 'Serving', 'Billing'];
+const ALL_STATUSES: TableStatus[] = ['available', 'occupied', 'reserved', 'serving', 'billing'];
 
 export default function WaiterPage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -57,7 +57,7 @@ export default function WaiterPage() {
   }, [refetch]);
 
   const handleTableSelect = (table: Table) => {
-    if (table.status !== 'Billing') {
+    if (table.status !== 'billing') {
       setSelectedTable(table);
       setIsPopupOpen(true);
     }
