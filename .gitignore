@@ -44,10 +44,18 @@ next-env.d.ts
 firebase-debug.log
 firestore-debug.log
 
-# database
-dev.db
+# local env files
+.env
+.env.local
+.env.*.local
+
+# Prisma SQLite dev db
+*.db
 *.sqlite
 *.sqlite3
+
+# Prisma generated client
+/node_modules/@prisma/client
 
 # prisma
 /prisma/migrations

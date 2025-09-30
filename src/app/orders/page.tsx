@@ -75,11 +75,11 @@ export default function OrdersPage() {
 
   const getProgressPercentage = (status: OrderStatus): number => {
     switch (status) {
-      case 'Pending': return 10;
-      case 'Preparing': return 40;
-      case 'Ready': return 80;
-      case 'Served': return 90;
-      case 'Paid': return 100;
+      case 'pending': return 10;
+      case 'preparing': return 40;
+      case 'ready': return 80;
+      case 'served': return 90;
+      case 'paid': return 100;
       default: return 0;
     }
   };
@@ -144,7 +144,7 @@ export default function OrdersPage() {
   });
 
   const getNextStatus = (currentStatus: OrderStatus): OrderStatus | null => {
-    const statusFlow: OrderStatus[] = ['Pending', 'Preparing', 'Ready', 'Served', 'Paid'];
+    const statusFlow: OrderStatus[] = ['pending', 'preparing', 'ready', 'served', 'paid'];
     const currentIndex = statusFlow.indexOf(currentStatus);
     return currentIndex < statusFlow.length - 1 ? statusFlow[currentIndex + 1] : null;
   };
@@ -208,9 +208,9 @@ export default function OrdersPage() {
       <div className="flex flex-wrap gap-2">
         {[
           { label: 'All', count: orders?.length || 0 },
-          { label: 'In Progress', count: orders?.filter(o => ['Pending', 'Preparing'].includes(o.status)).length || 0 },
-          { label: 'Ready to Served', count: orders?.filter(o => o.status === 'Ready').length || 0 },
-          { label: 'Waiting for Payment', count: orders?.filter(o => o.status === 'Served').length || 0 }
+          { label: 'In Progress', count: orders?.filter(o => ['pending', 'preparing'].includes(o.status)).length || 0 },
+          { label: 'Ready to Served', count: orders?.filter(o => o.status === 'ready').length || 0 },
+          { label: 'Waiting for Payment', count: orders?.filter(o => o.status === 'served').length || 0 }
         ].map((filter) => (
           <Button
             key={filter.label}
@@ -267,9 +267,9 @@ export default function OrdersPage() {
                       <h3 className="text-lg font-semibold">Table {tableNumber}</h3>
                       <p className="text-xs text-muted-foreground">
                         {tableOrders.length} order{tableOrders.length !== 1 ? 's' : ''} • 
-                        {tableOrders.some(o => ['Pending', 'Preparing'].includes(o.status)) && ' In Progress'}
-                        {tableOrders.some(o => o.status === 'Ready') && ' Ready to Serve'}
-                        {tableOrders.some(o => o.status === 'Served') && ' Waiting for Payment'}
+                        {tableOrders.some(o => ['pending', 'preparing'].includes(o.status)) && ' In Progress'}
+                        {tableOrders.some(o => o.status === 'ready') && ' Ready to Serve'}
+                        {tableOrders.some(o => o.status === 'served') && ' Waiting for Payment'}
                       </p>
                     </div>
                   </div>

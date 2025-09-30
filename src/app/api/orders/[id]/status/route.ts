@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/database';
+import { updateOrderStatus } from '@/services/orders';
+import { getOrdersByTable } from '@/services/orders';
+import { updateTableStatus } from '@/services/tables';
 
+/**
+ * PATCH /api/orders/[id]/status - Updates an order's status
+ * @param request - Contains the new status in the request body
+ * @param params - Contains the order ID
+ * @returns Success message with updated order information
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,58 +26,44 @@ export async function PATCH(
       );
     }
 
-    const validStatuses = ['Pending', 'Preparing', 'Ready', 'Served', 'Paid'];
+    // Updated to use lowercase status values
+    const validStatuses = ['pending', 'preparing', 'ready', 'served', 'paid'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
-        { error: 'Invalid status' },
+        { error: 'Invalid status. Valid statuses are: ' + validStatuses.join(', ') },
         { status: 400 }
       );
     }
 
-    const db = getDatabase();
+    // Update order status using service layer
+    const updatedOrder = await updateOrderStatus(orderId, status);
     
-    // Update order status
-    const updateOrder = db.prepare(`
-      UPDATE orders 
-      SET status = ?, updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `);
-    
-    const result = updateOrder.run(status, orderId);
-    
-    if (result.changes === 0) {
+    if (!updatedOrder) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       );
     }
 
-    // If order is marked as paid, update table status to free
-    if (status === 'Paid') {
-      const getTableId = db.prepare('SELECT table_id FROM orders WHERE id = ?');
-      const order = getTableId.get(orderId) as { table_id: number };
+    // If order is marked as paid, check if table should be set to available
+    if (status === 'paid') {
+      // Get all orders for this table
+      const tableOrders = await getOrdersByTable(updatedOrder.tableId);
       
-      if (order) {
-        // Check if there are any other active orders for this table
-        const activeOrdersQuery = db.prepare(`
-          SELECT COUNT(*) as count 
-          FROM orders 
-          WHERE table_id = ? AND status IN ('Pending', 'Preparing', 'Ready', 'Served')
-        `);
-        const activeOrders = activeOrdersQuery.get(order.table_id) as { count: number };
-        
-        if (activeOrders.count === 0) {
-          // No more active orders, set table to free
-          const updateTable = db.prepare('UPDATE tables SET status = ? WHERE id = ?');
-          updateTable.run('Free', order.table_id);
-        }
+      // Check if there are any other non-paid orders for this table
+      const activeOrders = tableOrders.filter(order => order.status !== 'paid');
+      
+      if (activeOrders.length === 0) {
+        // No more active orders, set table to available
+        await updateTableStatus(updatedOrder.tableId, 'available');
       }
     }
 
     return NextResponse.json({ 
       message: 'Order status updated successfully',
       orderId,
-      status 
+      status,
+      order: updatedOrder
     });
   } catch (error) {
     console.error('Error updating order status:', error);
